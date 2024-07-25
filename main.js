@@ -1,22 +1,45 @@
-console.log("Você toca algum instrumento? ");
-process.stdin.on("data", function (data) {
-  let entrada_usuario = data.toString().trim();
+const express = require('express');
+const axios = require('axios');
+const bodyParser = require('body-parser');
 
-  if (entrada_usuario == "sim" || entrada_usuario == "s") {
-    console.log(
-      "Você toca instrumentos! Parabéns! Qual instrumento você toca?"
-    );
-  } else if (entrada_usuario == "Violão" || entrada_usuario == "violao") {
-    console.log("Violão é sempre bem vindo em dias festivos.");
-  } else if (entrada_usuario == "Piano" || entrada_usuario == "piano") {
-    console.log("Você é demais! Piano é um instrumento díficil.");
-  } else if (entrada_usuario == "Guitarra" || entrada_usuario == "guitarra") {
-    console.log("Fã de Guitar Hero? Guitarra é um ótimo instrumento");
-  } else if (
-    entrada_usuario == "não" ||
-    entrada_usuario == "nao" ||
-    entrada_usuario == "n"
-  ) {
-    console.log("Que pena! Você não toca instrumentos.");
-  } else console.log("Não reconhecido.");
+const app = express();
+const port = 3000;
+
+app.use(bodyParser.json());
+
+// Função para buscar todos os estados
+async function fetchEstados() {
+  const response = await axios.get('https://servicodados.ibge.gov.br/api/v1/localidades/estados');
+  return response.data;
+}
+
+// Função para buscar todas as cidades de um estado
+async function fetchCidades(estadoId) {
+  const response = await axios.get(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${estadoId}/municipios`);
+  return response.data;
+}
+
+// Rota para listar todos os estados
+app.get('/estados', async (req, res) => {
+  try {
+    const estados = await fetchEstados();
+    res.status(200).json(estados);
+  } catch (error) {
+    res.status(500).send('Erro ao buscar dados dos estados');
+  }
+});
+
+// Rota para listar as cidades de um estado específico
+app.get('/cidades/:estadoId', async (req, res) => {
+  const { estadoId } = req.params;
+  try {
+    const cidades = await fetchCidades(estadoId);
+    res.status(200).json(cidades);
+  } catch (error) {
+    res.status(500).send('Erro ao buscar dados das cidades');
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Servidor rodando na porta ${port}`);
 });
